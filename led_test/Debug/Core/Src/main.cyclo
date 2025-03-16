@@ -1,7 +1,7 @@
-../Core/Src/main.c:58:6:LED_Init	1
-../Core/Src/main.c:66:6:Blink	1
-../Core/Src/main.c:74:6:LED_Manager	4
-../Core/Src/main.c:99:5:main	1
-../Core/Src/main.c:146:6:SystemClock_Config	4
-../Core/Src/main.c:193:13:MX_GPIO_Init	1
-../Core/Src/main.c:228:6:Error_Handler	1
+../Core/Src/main.c:60:6:LED_Init	1
+../Core/Src/main.c:69:6:Blink	1
+../Core/Src/main.c:77:6:LED_Manager	4
+../Core/Src/main.c:102:5:main	1
+../Core/Src/main.c:149:6:SystemClock_Config	4
+../Core/Src/main.c:196:13:MX_GPIO_Init	1
+../Core/Src/main.c:231:6:Error_Handler	1

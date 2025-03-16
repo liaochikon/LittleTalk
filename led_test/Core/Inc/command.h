@@ -41,9 +41,18 @@ typedef enum
 	_null
 } MessageDataType;
 
+typedef enum
+{
+	DATA_TYPE_ERROR = 0U,
+	DATA_VALUE_ERROR,
+	MSG_LEN_ERROR,
+	CHECK_HEX_ERROR,
+	CMD_HEX_ERROR,
+	BUSY_ERROR
+} ErrorMessage;
+
 #define CHECK_HEX 0x6B
 #define ERROR_HEX 0xEE
-#define BUSY_HEX 0xBB
 #define DONE_HEX 0xDD
 
 #define START_HEX_IDX 0

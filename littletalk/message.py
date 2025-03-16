@@ -6,7 +6,6 @@ import time
 class MessageFormat():
     CHECK_HEX = 0x6B
     ERROR_HEX = 0xEE
-    BUSY_HEX = 0xBB
     DONE_HEX = 0xDD
 
     START_HEX_IDX = 0
@@ -31,30 +30,38 @@ class MessageDataType(IntEnum):
     _bool    = auto()
     _null    = auto()
 
+class ErrorMessage(IntEnum):
+    DATA_TYPE_ERROR  = 0
+    DATA_VALUE_ERROR = auto()
+    MSG_LENGTH_ERROR = auto()
+    CHECK_HEX_ERROR  = auto()
+    CMD_HEX_ERROR    = auto()
+    BUSY_ERROR       = auto()
+
 class ReturnMessage():
     ERROR    = "ERROR"
     DONE     = "DONE"
-    BUSY     = "BUSY"
     NULL     = "NULL"
     MISMATCH = "MISMATCH"
+
+
 
 def Receive_Message(serial_device : Serial, wait_sec = 0.05):
     data_raw = []
     delta_sec = 0
+    start_sec = time.time()
     while(len(data_raw) < MessageFormat.MSG_LEN):
-        start_sec = time.time()
         delta_sec = time.time() - start_sec
         if(delta_sec > wait_sec):
             return None
-
         b = serial_device.read()
         if b != b'':
             data_raw.extend(b)
     return data_raw
 
-def Transmit_Message(serial_device : Serial, cmd_hex, data = None, data_type = MessageDataType._null):
+def Transmit_Message(serial_device : Serial, cmd_hex : IntEnum, data = None, data_type = MessageDataType._null):
     message = [0 for i in range(MessageFormat.MSG_LEN)]
-    message[MessageFormat.START_HEX_IDX] = cmd_hex
+    message[MessageFormat.START_HEX_IDX] = cmd_hex.value
     message[MessageFormat.MSG_LEN_HEX_IDX] = MessageFormat.MSG_LEN
     message[MessageFormat.DATA_TYPE_HEX_IDX] = data_type.value
 
@@ -64,20 +71,36 @@ def Transmit_Message(serial_device : Serial, cmd_hex, data = None, data_type = M
         
     message[MessageFormat.END_HEX_IDX] = MessageFormat.CHECK_HEX
     serial_device.write(message)
+    return message
     
 def Wait_Message(serial_device, cmd_hex, data_type = MessageDataType._null, wait_sec = 0.05):
     data_raw = Receive_Message(serial_device, wait_sec)
     if data_raw == None:
-        return ReturnMessage.NULL, None, None
+        return None ,ReturnMessage.NULL, None
     if data_raw[MessageFormat.START_HEX_IDX] != cmd_hex:
-        return ReturnMessage.MISMATCH, None, data_raw
+        return data_raw ,ReturnMessage.MISMATCH, None
     if data_raw[MessageFormat.END_HEX_IDX] == MessageFormat.ERROR_HEX:
-        return ReturnMessage.ERROR, None, data_raw
-    if data_raw[MessageFormat.END_HEX_IDX] == MessageFormat.BUSY_HEX:
-        return ReturnMessage.BUSY, None, data_raw
+        error_data = Error_Data_Interpret(data_raw)
+        return data_raw ,ReturnMessage.ERROR, error_data
     if data_raw[MessageFormat.END_HEX_IDX] == MessageFormat.DONE_HEX:
         data = Receive_Data_Interpret(data_raw, data_type)
-        return ReturnMessage.DONE, data, data_raw
+        return data_raw ,ReturnMessage.DONE, data
+    
+def Error_Data_Interpret(data):
+    uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(4)]
+    data = uint8_list_to_int32(*uint8_list)
+    if data == ErrorMessage.DATA_TYPE_ERROR:
+        return ErrorMessage.DATA_TYPE_ERROR
+    elif data == ErrorMessage.DATA_VALUE_ERROR:
+        return ErrorMessage.DATA_VALUE_ERROR
+    elif data == ErrorMessage.MSG_LENGTH_ERROR:
+        return ErrorMessage.MSG_LENGTH_ERROR
+    elif data == ErrorMessage.CHECK_HEX_ERROR:
+        return ErrorMessage.CHECK_HEX_ERROR
+    elif data == ErrorMessage.CMD_HEX_ERROR:
+        return ErrorMessage.CMD_HEX_ERROR
+    elif data == ErrorMessage.BUSY_ERROR:
+        return ErrorMessage.BUSY_ERROR
 
 def Send_Data_Interpret(data, data_type : MessageDataType):
     if data_type == MessageDataType._int64:
@@ -106,30 +129,41 @@ def Send_Data_Interpret(data, data_type : MessageDataType):
         uint8_list = []
     return uint8_list
 
-def Receive_Data_Interpret(uint8_list, t : MessageDataType):
-    if t == MessageDataType._int64:
-        data = uint8_list_to_int64(uint8_list)
-    elif t == MessageDataType._int32:
-        data = uint8_list_to_int32(uint8_list)
-    elif t == MessageDataType._int16:
-        data = uint8_list_to_int16(uint8_list)
-    elif t == MessageDataType._int8:
-        data = uint8_list_to_int8(uint8_list)
-    elif t == MessageDataType._uint64:
-        data = uint8_list_to_uint64(uint8_list)
-    elif t == MessageDataType._uint32:
-        data = uint8_list_to_uint32(uint8_list)
-    elif t == MessageDataType._uint16:
-        data = uint8_list_to_uint16(uint8_list)
-    elif t == MessageDataType._uint8:
-        data = uint8_list_to_uint8(uint8_list)
-    elif t == MessageDataType._float64:
-        data = uint8_list_to_float64(uint8_list)
-    elif t == MessageDataType._float32:
-        data = uint8_list_to_float32(uint8_list)
-    elif t == MessageDataType._bool:
-        data = uint8_list_to_bool(uint8_list)
-    elif t == MessageDataType._null:
+def Receive_Data_Interpret(data, data_type : MessageDataType):
+    if data_type == MessageDataType._int64:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(8)]
+        data = uint8_list_to_int64(*uint8_list)
+    elif data_type == MessageDataType._int32:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(4)]
+        data = uint8_list_to_int32(*uint8_list)
+    elif data_type == MessageDataType._int16:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(2)]
+        data = uint8_list_to_int16(*uint8_list)
+    elif data_type == MessageDataType._int8:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(1)]
+        data = uint8_list_to_int8(*uint8_list)
+    elif data_type == MessageDataType._uint64:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(8)]
+        data = uint8_list_to_uint64(*uint8_list)
+    elif data_type == MessageDataType._uint32:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(4)]
+        data = uint8_list_to_uint32(*uint8_list)
+    elif data_type == MessageDataType._uint16:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(2)]
+        data = uint8_list_to_uint16(*uint8_list)
+    elif data_type == MessageDataType._uint8:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(1)]
+        data = uint8_list_to_uint8(*uint8_list)
+    elif data_type == MessageDataType._float64:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(8)]
+        data = uint8_list_to_float64(*uint8_list)
+    elif data_type == MessageDataType._float32:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(4)]
+        data = uint8_list_to_float32(*uint8_list)
+    elif data_type == MessageDataType._bool:
+        uint8_list = [data[MessageFormat.DATA_START_HEX_IDX + idx] for idx in range(1)]
+        data = uint8_list_to_bool(*uint8_list)
+    elif data_type == MessageDataType._null:
         data = None
     return data
 

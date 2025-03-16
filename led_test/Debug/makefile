@@ -64,8 +64,8 @@ all: main-build
 main-build: led_test.elf secondary-outputs
 
 # Tool invocations
-led_test.elf led_test.map: $(OBJS) $(USER_OBJS) C:\Users\90002283\STM32CubeIDE\workspace_1.17.0\led_test\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "led_test.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\90002283\STM32CubeIDE\workspace_1.17.0\led_test\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="led_test.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+led_test.elf led_test.map: $(OBJS) $(USER_OBJS) C:\Users\kylem\Desktop\little-talk\led_test\STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "led_test.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"C:\Users\kylem\Desktop\little-talk\led_test\STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="led_test.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

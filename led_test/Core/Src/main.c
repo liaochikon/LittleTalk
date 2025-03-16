@@ -63,13 +63,14 @@ void LED_Init(LED *led)
 	led->current_enable = false;
 	led->target_blink_nums = 0;
 	led->current_blink_nums = 0;
+	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, SET);
 }
 
 void Blink()
 {
-	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, SET);
-	HAL_Delay(100);
 	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, RESET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, SET);
 	HAL_Delay(100);
 }
 
@@ -89,7 +90,7 @@ void LED_Manager(LED *led)
 	}
 	else
 	{
-		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, RESET);
+		HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, SET);
 	}
 }
 /* USER CODE END 0 */
@@ -234,6 +235,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  Blink();
   }
   /* USER CODE END Error_Handler_Debug */
 }
