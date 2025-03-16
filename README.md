@@ -8,11 +8,8 @@ LittleTalk used Python for the PC side programming. You can control STM32 in a s
 ``` python
 bulepill = Get_Serial_Device("COM3", 115200)
 
-Target_Blink_Num = 200
-Current_Blink_Num = 0
-
 LED_ON(bulepill)
-LED_Blink(bulepill, Target_Blink_Num)
+LED_Blink(bulepill, Blink_Num)
 LED_OFF(bulepill)
 ```
 
